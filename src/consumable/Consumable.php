@@ -8,7 +8,8 @@ abstract class Consumable {
   public function __construct(
     protected string $name,
     protected string $description = ''
-  ) {}
+  ) {
+  }
 
   public function getName(): string {
     return $this->name;
@@ -23,4 +24,3 @@ abstract class Consumable {
    */
   abstract public function consume(Human $target): array;
 }
-

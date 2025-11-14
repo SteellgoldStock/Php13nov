@@ -13,13 +13,13 @@ class Armor {
 
   public function __construct(
     public string $type = self::TYPE_LIGHT,
-    public int $durability = 40,
-    public float $damageReduction = 0.10,
-    private bool $isCustom = false
+    public int    $durability = 40,
+    public float  $damageReduction = 0.10,
+    private bool  $isCustom = false
   ) {
     if ($this->isCustom) return;
 
-    match($type) {
+    match ($type) {
       self::TYPE_LIGHT => $this->setStats(40, 0.10),
       self::TYPE_IRON => $this->setStats(80, 0.25),
       self::TYPE_SCALE => $this->setStats(120, 0.40),
@@ -29,8 +29,8 @@ class Armor {
 
   public static function createCustom(
     string $name,
-    int $durability,
-    float $damageReduction
+    int    $durability,
+    float  $damageReduction
   ): self {
     return new self(
       type: $name,
@@ -62,7 +62,7 @@ class Armor {
   }
 
   public function getTypeName(): string {
-    return match($this->type) {
+    return match ($this->type) {
       self::TYPE_LIGHT => 'Armure légère',
       self::TYPE_IRON => 'Armure de fer',
       self::TYPE_SCALE => 'Armure d\'écaille',
@@ -95,4 +95,3 @@ class Armor {
     return $remainingDamage;
   }
 }
-

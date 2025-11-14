@@ -7,13 +7,14 @@ class Weapon {
   public const string TYPE_PRIMARY = 'primary';
 
   public function __construct(
-    public string $name,
-    public string $type = self::TYPE_PRIMARY,
-    public float $damage = 50,
-    public float $range = 1,
+    public string  $name,
+    public string  $type = self::TYPE_PRIMARY,
+    public float   $damage = 50,
+    public float   $range = 1,
     public ?Quiver $quiver = null,
-    public bool $isMelee = true,
-  ) {}
+    public bool    $isMelee = true,
+  ) {
+  }
 
   public function getName(): string {
     return $this->name;

@@ -120,4 +120,3 @@ class Boots {
     return $this->dodgeBonus > 0.0;
   }
 }
-

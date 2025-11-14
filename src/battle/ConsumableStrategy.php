@@ -15,17 +15,17 @@ class ConsumableStrategy {
   private const float CRITICAL_HEALTH_THRESHOLD = 30.0;
   private const float LOW_HEALTH_THRESHOLD = 50.0;
   private const int LOW_AMMO_THRESHOLD = 3;
-  
+
   /**
    * Analyzes the fighter's situation and decides if they should use a consumable
-   * 
+   *
    * @param Human $fighter The fighter
    * @param Human|null $target The current target (optional for more context)
    * @return array|null Result of consumable usage, or null if nothing is used
    */
   public static function evaluateAndUseConsumable(Human $fighter, ?Human $target = null): ?array {
     $inventory = $fighter->getInventory();
-    
+
     if (empty($inventory)) {
       return null;
     }
@@ -99,7 +99,6 @@ class ConsumableStrategy {
         // Check if it's a healing potion
         $reflection = new \ReflectionClass($consumable);
         $effectProperty = $reflection->getProperty('effect');
-        $effectProperty->setAccessible(true);
         $effect = $effectProperty->getValue($consumable);
 
         if ($effect === Potion::EFFECT_HEAL) {
@@ -127,7 +126,6 @@ class ConsumableStrategy {
       if ($consumable instanceof Potion) {
         $reflection = new \ReflectionClass($consumable);
         $effectProperty = $reflection->getProperty('effect');
-        $effectProperty->setAccessible(true);
         $effect = $effectProperty->getValue($consumable);
 
         if ($effect === Potion::EFFECT_ANTIDOTE) {
@@ -147,7 +145,6 @@ class ConsumableStrategy {
       if ($consumable instanceof Potion) {
         $reflection = new \ReflectionClass($consumable);
         $effectProperty = $reflection->getProperty('effect');
-        $effectProperty->setAccessible(true);
         $effect = $effectProperty->getValue($consumable);
 
         if ($effect === Potion::EFFECT_ENDURANCE) {
@@ -167,7 +164,6 @@ class ConsumableStrategy {
       if ($consumable instanceof Potion) {
         $reflection = new \ReflectionClass($consumable);
         $effectProperty = $reflection->getProperty('effect');
-        $effectProperty->setAccessible(true);
         $effect = $effectProperty->getValue($consumable);
 
         if ($effect === Potion::EFFECT_ATTACK) {
@@ -177,7 +173,6 @@ class ConsumableStrategy {
         // Some foods give attack bonuses
         $reflection = new \ReflectionClass($consumable);
         $bonusProperty = $reflection->getProperty('attackBonusPercent');
-        $bonusProperty->setAccessible(true);
         $bonus = $bonusProperty->getValue($consumable);
 
         if ($bonus > 0) {
@@ -197,7 +192,6 @@ class ConsumableStrategy {
       if ($consumable instanceof Potion) {
         $reflection = new \ReflectionClass($consumable);
         $effectProperty = $reflection->getProperty('effect');
-        $effectProperty->setAccessible(true);
         $effect = $effectProperty->getValue($consumable);
 
         if ($effect === Potion::EFFECT_EVASION) {
@@ -206,7 +200,6 @@ class ConsumableStrategy {
       } elseif ($consumable instanceof Food) {
         $reflection = new \ReflectionClass($consumable);
         $bonusProperty = $reflection->getProperty('dodgeBonusPercent');
-        $bonusProperty->setAccessible(true);
         $bonus = $bonusProperty->getValue($consumable);
 
         if ($bonus > 0) {
@@ -223,7 +216,7 @@ class ConsumableStrategy {
    */
   private static function useConsumableAtIndex(Human $fighter, int $index): array {
     $messages = $fighter->useConsumable($index);
-    
+
     if ($messages === null) {
       return [];
     }
@@ -234,4 +227,3 @@ class ConsumableStrategy {
     ];
   }
 }
-

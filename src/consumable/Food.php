@@ -6,15 +6,15 @@ use App\Entity\Human;
 
 class Food extends Consumable {
   public function __construct(
-    string $name,
-    private int $healAmount,
+    string        $name,
+    private int   $healAmount,
     private float $attackBonusPercent = 0.0,
-    private int $attackBonusTurns = 0,
+    private int   $attackBonusTurns = 0,
     private float $movementBonusPercent = 0.0,
-    private int $movementBonusTurns = 0,
+    private int   $movementBonusTurns = 0,
     private float $dodgeBonusPercent = 0.0,
-    private int $dodgeBonusTurns = 0,
-    string $description = ''
+    private int   $dodgeBonusTurns = 0,
+    string        $description = ''
   ) {
     parent::__construct($name, $description);
   }
@@ -76,4 +76,3 @@ class Food extends Consumable {
     return $messages;
   }
 }
-

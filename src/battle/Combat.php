@@ -35,22 +35,22 @@ class Combat {
   }
 
   public function start(): void {
-    
+
     foreach ($this->fighters as $fighter) {
     }
     ConsoleMessage::line();
 
     while (count($this->getAliveFighters()) > 1) {
       echo "[Tour {$this->round}] ---------------\n";
-      
+
       $aliveFighters = $this->getAliveFighters();
-      
+
       foreach ($aliveFighters as $attacker) {
         if (!$attacker->isAlive()) continue;
-        
+
         $target = $this->findClosestTarget($attacker);
         if ($target === null) break;
-        
+
         $this->executeRound($attacker, $target);
 
         if (count($this->getAliveFighters()) <= 1) break;
@@ -76,7 +76,7 @@ class Combat {
 
     foreach ($aliveFighters as $potential) {
       if ($potential === $attacker) continue;
-      
+
       $distance = $attacker->distanceTo($potential);
       if ($distance < $minDistance) {
         $minDistance = $distance;
@@ -124,7 +124,7 @@ class Combat {
       $reason = $attackResult['reason'] ?? 'distance';
       $shouldMove = $attackResult['shouldMove'] ?? true;
       $before = round($attackResult['distance'] ?? $attacker->distanceTo($defender), 1);
-      
+
       if ($shouldMove) {
         $attacker->moveTowards($defender);
         $after = round($attacker->distanceTo($defender), 1);
@@ -194,7 +194,7 @@ class Combat {
     if (!$defender->isAlive()) {
       ConsoleMessage::line();
       ConsoleMessage::out("{$defender->getName()} est éliminé !", "💀");
-      
+
       $remaining = count($this->getAliveFighters());
       if ($remaining === 1) {
         ConsoleMessage::out("{$attacker->getName()} est le dernier survivant !", "🤴");
@@ -213,4 +213,3 @@ class Combat {
     return "Munitions restantes : {$ammo}";
   }
 }
-

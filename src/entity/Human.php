@@ -17,20 +17,21 @@ class Human {
   private array $dodgeBuff = ['percent' => 0.0, 'turns' => 0];
   private array $movementBuff = ['percent' => 0.0, 'turns' => 0];
   private ?array $poison = null;
-  
+
   /** @var Consumable[] */
   private array $inventory = [];
 
   public function __construct(
-    public string $name,
-    public float $health = 100,
+    public string  $name,
+    public float   $health = 100,
     public ?Weapon $weapon = null,
     public ?Weapon $secondaryWeapon = null,
     public ?Shield $shield = null,
-    public ?Armor $armor = null,
-    public ?Boots $boots = null,
-    public float $position = 0,
-  ) {}
+    public ?Armor  $armor = null,
+    public ?Boots  $boots = null,
+    public float   $position = 0,
+  ) {
+  }
 
   public function beginTurn(): array {
     $messages = [];
@@ -425,10 +426,10 @@ class Human {
 
     $consumable = $this->inventory[$index];
     $messages = $consumable->consume($this);
-    
+
     // Remove the consumable from inventory after use
     array_splice($this->inventory, $index, 1);
-    
+
     return $messages;
   }
 

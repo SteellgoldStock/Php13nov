@@ -12,10 +12,10 @@ class Potion extends Consumable {
   public const string EFFECT_ANTIDOTE = 'antidote';
 
   private function __construct(
-    string $name,
+    string         $name,
     private string $effect,
-    private array $config = [],
-    string $description = ''
+    private array  $config = [],
+    string         $description = ''
   ) {
     parent::__construct($name, $description);
   }

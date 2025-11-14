@@ -7,7 +7,7 @@ class Quiver {
 
   public function __construct(
     public ?int $arrows = null,
-    ?int $capacity = null
+    ?int        $capacity = null
   ) {
     $this->capacity = $capacity ?? $arrows;
   }
