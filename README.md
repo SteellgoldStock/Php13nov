@@ -2,16 +2,43 @@
 
 Un système de combat tour par tour en PHP avec gestion d'armes, de boucliers et de consommables.
 
+## Prérequis
+
+- PHP 8.1 ou supérieur
+
+**Aucune dépendance externe requise !** Le projet utilise un autoloader PSR-4 personnalisé.
+
 ## Installation
 
+Aucune installation nécessaire. Clonez simplement le projet :
+
 ```bash
-composer install
+git clone https://github.com/SteellgoldStock/CombatPHP
+cd php113
 ```
 
 ## Lancer la démo
 
 ```bash
 php index.php
+```
+
+## Note technique
+
+Le projet utilise un autoloader personnalisé (`autoload.php`) qui implémente le standard PSR-4. Composer n'est pas nécessaire car il n'y a aucune dépendance externe.
+
+### Option : Utiliser Composer (facultatif)
+
+Si vous préférez utiliser Composer pour l'autoloading, vous pouvez :
+
+```bash
+composer install
+```
+
+Puis modifiez `index.php` pour utiliser :
+
+```php
+require __DIR__ . '/vendor/autoload.php';  // Au lieu de autoload.php
 ```
 
 ---
