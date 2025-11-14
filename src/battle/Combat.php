@@ -3,6 +3,7 @@
 namespace App\Battle;
 
 use App\Entity\Human;
+use App\Utils\ConsoleMessage;
 use InvalidArgumentException;
 
 class Combat {
@@ -34,12 +35,10 @@ class Combat {
   }
 
   public function start(): void {
-    echo "Combattants : " . count($this->fighters) . "\n";
     
     foreach ($this->fighters as $fighter) {
-      echo "  • {$fighter->getName()} (PV: {$fighter->health}, position: {$fighter->getPosition()})\n";
     }
-    echo "\n";
+    ConsoleMessage::line();
 
     while (count($this->getAliveFighters()) > 1) {
       echo "[Tour {$this->round}] ---------------\n";
@@ -57,16 +56,16 @@ class Combat {
         if (count($this->getAliveFighters()) <= 1) break;
       }
 
-      echo "\n";
+      ConsoleMessage::line();
       $this->round++;
     }
 
     $survivors = $this->getAliveFighters();
     if (count($survivors) === 1) {
       $winner = array_values($survivors)[0];
-      echo "🏆 {$winner->getName()} remporte le combat !\n";
+      ConsoleMessage::out("{$winner->getName()} remporte le combat !", "🏆");
     } elseif (count($survivors) === 0) {
-      echo "⚰️  Tous les combattants sont tombés ! Match nul.\n";
+      ConsoleMessage::out("Tous les combattants sont tombés ! Match nul.", "⚰️");
     }
   }
 
@@ -89,6 +88,33 @@ class Combat {
   }
 
   private function executeRound(Human $attacker, Human $defender): void {
+    // AI decides FIRST - can anticipate poison damage and other turn effects
+    $consumableResult = ConsumableStrategy::evaluateAndUseConsumable($attacker, $defender);
+    if ($consumableResult && isset($consumableResult['messages'])) {
+      foreach ($consumableResult['messages'] as $message) {
+        if (is_array($message) && isset($message['emoji']) && isset($message['text'])) {
+          ConsoleMessage::out($message['text'], $message['emoji']);
+        } else {
+          ConsoleMessage::out($message);
+        }
+      }
+    }
+
+    $turnLogs = $attacker->beginTurn();
+
+    foreach ($turnLogs as $logLine) {
+      if (is_array($logLine) && isset($logLine['emoji']) && isset($logLine['text'])) {
+        ConsoleMessage::out($logLine['text'], $logLine['emoji']);
+      } else {
+        ConsoleMessage::out($logLine);
+      }
+    }
+
+    if (!$attacker->isAlive()) {
+      ConsoleMessage::out("{$attacker->getName()} succombe avant de pouvoir agir.", "☠️");
+      return;
+    }
+
     $attackResult = $attacker->attack($defender);
     $type = $attackResult['type'] ?? 'unknown';
     $weaponName = $attackResult['weaponName'] ?? 'poings';
@@ -104,20 +130,20 @@ class Combat {
         $after = round($attacker->distanceTo($defender), 1);
 
         if ($reason === 'no_ammo' && $weaponName) {
-          echo "🚶  {$attacker->getName()} n'a plus de munitions pour son {$weaponName} et se rapproche de {$defender->getName()} (distance: {$before} ➤ {$after})\n";
+          ConsoleMessage::out("{$attacker->getName()} n'a plus de munitions pour son {$weaponName} et se rapproche de {$defender->getName()} (distance: {$before} ➤ {$after})", "🚶");
         } else {
-          echo "🚶  {$attacker->getName()} est trop loin pour atteindre {$defender->getName()} (distance: {$before} ➤ {$after})\n";
+          ConsoleMessage::out("{$attacker->getName()} est trop loin pour atteindre {$defender->getName()} (distance: {$before} ➤ {$after})", "🚶");
         }
 
       } else {
         if ($reason === 'no_ammo' && $weaponName) {
-          echo "⚠️  {$attacker->getName()} n'a plus de munitions pour son {$weaponName} mais reste à distance (distance: {$before})\n";
+          ConsoleMessage::out("{$attacker->getName()} n'a plus de munitions pour son {$weaponName} mais reste à distance (distance: {$before})", "⚠️");
         } else {
-          echo "⚠️  {$attacker->getName()} ne peut pas atteindre {$defender->getName()} (distance: {$before})\n";
+          ConsoleMessage::out("{$attacker->getName()} ne peut pas atteindre {$defender->getName()} (distance: {$before})", "⚠️");
         }
       }
-      echo "    (attaque interrompue)\n";
-      echo "    Positions ➤ {$attacker->getName()}: " . round($attacker->getPosition(), 1) . " | {$defender->getName()}: " . round($defender->getPosition(), 1) . "\n";
+      ConsoleMessage::out("(attaque interrompue)");
+      ConsoleMessage::out("Positions ➤ {$attacker->getName()}: " . round($attacker->getPosition(), 1) . " | {$defender->getName()}: " . round($defender->getPosition(), 1));
 
       return;
     }
@@ -127,49 +153,53 @@ class Combat {
 
     if ($type === 'no_ammo') {
       if ($weaponName) {
-        echo "⚠️  {$attacker->getName()} n'a plus de munitions pour son {$weaponName}.\n";
+        ConsoleMessage::out("{$attacker->getName()} n'a plus de munitions pour son {$weaponName}.", "⚠️");
       } else {
-        echo "⚠️  {$attacker->getName()} n'a pas réussi à attaquer : aucune munition disponible.\n";
+        ConsoleMessage::out("{$attacker->getName()} n'a pas réussi à attaquer : aucune munition disponible.", "⚠️");
       }
 
       if ($ammoLine) {
-        echo $ammoLine;
+        ConsoleMessage::out($ammoLine);
       }
 
-      echo "    Positions ➤ {$attacker->getName()}: " . round($attacker->getPosition(), 1) . " | {$defender->getName()}: " . round($defender->getPosition(), 1) . "\n";
+      ConsoleMessage::out("Positions ➤ {$attacker->getName()}: " . round($attacker->getPosition(), 1) . " | {$defender->getName()}: " . round($defender->getPosition(), 1));
       return;
     }
 
     if ($type === 'blocked') {
-      echo "🛡️  {$defender->getName()} bloque l'attaque de {$attacker->getName()}.\n";
-      if ($shieldDurability !== null) {
-        echo "    Durabilité du bouclier : {$shieldDurability}\n";
+      ConsoleMessage::out("{$defender->getName()} bloque l'attaque de {$attacker->getName()}.", "🛡️");
+      if ($shieldDurability !== null && $shieldDurability > 0) {
+        ConsoleMessage::out("Durabilité du bouclier : {$shieldDurability}");
       }
-      echo "    Aucun dégât reçu.\n";
+      ConsoleMessage::out("Aucun dégât reçu.");
+    } elseif ($type === 'dodged') {
+      ConsoleMessage::out("{$defender->getName()} esquive l'attaque de {$attacker->getName()}.", "💨");
+      ConsoleMessage::out("Aucun dégât reçu.");
     } elseif ($type === 'damage') {
       $weaponLabel = $weaponName && $weaponName !== 'poings'
         ? "son {$weaponName}"
         : 'ses poings';
-      echo "⚔️  {$attacker->getName()} attaque avec {$weaponLabel} et inflige " . round($damage, 1) . " dégâts.\n";
-      echo "    {$defender->getName()} : " . max(0, round($defender->health, 1)) . " PV restants\n";
+      ConsoleMessage::out("{$attacker->getName()} attaque avec {$weaponLabel} et inflige " . round($damage, 1) . " dégâts.", "⚔️");
+      ConsoleMessage::out("{$defender->getName()} : " . max(0, round($defender->health, 1)) . " PV restants");
     } else {
-      echo "❓  Résultat d'attaque inattendu ({$type}).\n";
+      ConsoleMessage::out("Résultat d'attaque inattendu ({$type}).", "❓");
     }
 
     if ($ammoLine) {
-      echo $ammoLine;
+      ConsoleMessage::out($ammoLine);
     }
 
-    echo "    Positions ➤ {$attacker->getName()}: " . round($attacker->getPosition(), 1) . " | {$defender->getName()}: " . round($defender->getPosition(), 1) . "\n";
+    ConsoleMessage::out("Positions ➤ {$attacker->getName()}: " . round($attacker->getPosition(), 1) . " | {$defender->getName()}: " . round($defender->getPosition(), 1));
 
     if (!$defender->isAlive()) {
-      echo "\n💀 {$defender->getName()} est éliminé !\n";
+      ConsoleMessage::line();
+      ConsoleMessage::out("{$defender->getName()} est éliminé !", "💀");
       
       $remaining = count($this->getAliveFighters());
       if ($remaining === 1) {
-        echo "🤴 {$attacker->getName()} est le dernier survivant !\n";
+        ConsoleMessage::out("{$attacker->getName()} est le dernier survivant !", "🤴");
       } else {
-        echo "    Il reste {$remaining} combattants en vie.\n";
+        ConsoleMessage::out("Il reste {$remaining} combattants en vie.");
       }
     }
 
@@ -180,7 +210,7 @@ class Combat {
       return null;
     }
 
-    return "    Munitions restantes : {$ammo}\n";
+    return "Munitions restantes : {$ammo}";
   }
 }
 

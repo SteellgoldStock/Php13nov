@@ -47,4 +47,12 @@ class Weapon {
   public function getQuiver(): ?Quiver {
     return $this->quiver;
   }
+
+  public function restoreAmmo(?int $flat = null, ?float $ratio = null): int {
+    if ($this->quiver === null) {
+      return 0;
+    }
+
+    return $this->quiver->restore($flat, $ratio);
+  }
 }

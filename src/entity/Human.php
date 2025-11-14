@@ -2,12 +2,24 @@
 
 namespace App\Entity;
 
+use App\Consumable\Consumable;
+use App\Equipment\Armor;
+use App\Equipment\Boots;
 use App\Equipment\Shield;
 use App\Equipment\Weapon;
 
 class Human {
   private const float BASE_RANGE = 1.0;
   private const float DEFAULT_STEP = 1.0;
+  private const float BASE_DODGE_CHANCE = 5.0;
+
+  private array $attackBuff = ['percent' => 0.0, 'turns' => 0];
+  private array $dodgeBuff = ['percent' => 0.0, 'turns' => 0];
+  private array $movementBuff = ['percent' => 0.0, 'turns' => 0];
+  private ?array $poison = null;
+  
+  /** @var Consumable[] */
+  private array $inventory = [];
 
   public function __construct(
     public string $name,
@@ -15,8 +27,29 @@ class Human {
     public ?Weapon $weapon = null,
     public ?Weapon $secondaryWeapon = null,
     public ?Shield $shield = null,
+    public ?Armor $armor = null,
+    public ?Boots $boots = null,
     public float $position = 0,
   ) {}
+
+  public function beginTurn(): array {
+    $messages = [];
+
+    if ($this->poison && $this->poison['turns'] > 0) {
+      $damage = $this->poison['damage'];
+      $this->health -= $damage;
+      $this->poison['turns']--;
+
+      $messages[] = ['emoji' => '☠️', 'text' => "{$this->getName()} subit {$damage} dégâts de poison ({$this->poison['turns']} tours restants)."];
+
+      if ($this->poison['turns'] <= 0) {
+        $messages[] = ['emoji' => '💧', 'text' => "Le poison cesse d'affecter {$this->getName()}."];
+        $this->poison = null;
+      }
+    }
+
+    return $messages;
+  }
 
   public function getName(): string {
     return $this->name;
@@ -46,7 +79,24 @@ class Human {
     }
 
     $direction = $this->position < $target->position ? 1 : -1;
-    $movement = min($step, $distance);
+    $bonusMultiplier = 1.0;
+
+    // Temporary movement buff
+    if ($this->movementBuff['turns'] > 0) {
+      $bonusMultiplier += $this->movementBuff['percent'];
+      $this->movementBuff['turns']--;
+
+      if ($this->movementBuff['turns'] <= 0) {
+        $this->movementBuff = ['percent' => 0.0, 'turns' => 0];
+      }
+    }
+
+    // Boots bonus/malus (permanent while equipped)
+    if ($this->boots && $this->boots->hasMovementBonus()) {
+      $bonusMultiplier += $this->boots->getMovementBonus();
+    }
+
+    $movement = min($step * $bonusMultiplier, $distance);
     $this->position += $direction * $movement;
   }
 
@@ -153,6 +203,7 @@ class Human {
     $weaponName = $weapon?->getName() ?? 'poings';
     $weaponKind = $this->determineWeaponKind($weapon);
     $damage = $weapon ? $weapon->getDamage() : mt_rand(1, 5);
+    $damage *= $this->getAttackMultiplier();
 
     if ($weapon && !$this->consumeAmmo($weapon)) {
       return [
@@ -179,6 +230,7 @@ class Human {
     }
 
     if ($blocked) {
+      $this->consumeAttackBuffTurn();
       return [
         'type' => 'blocked',
         'weaponName' => $weaponName,
@@ -189,14 +241,226 @@ class Human {
       ];
     }
 
+    if ($target->attemptDodge()) {
+      $this->consumeAttackBuffTurn();
+      return [
+        'type' => 'dodged',
+        'weaponName' => $weaponName,
+        'weaponKind' => $weaponKind,
+        'damage' => 0.0,
+        'ammoRemaining' => $weapon?->getRemainingAmmo()
+      ];
+    }
+
+    // Armor absorption
+    $armorDurability = null;
+    $armorReduction = 0.0;
+    if ($target->armor && !$target->armor->isBroken()) {
+      $originalDamage = $damage;
+      $damage = $target->armor->absorbDamage($damage);
+      $armorDurability = $target->armor->getDurability();
+      $armorReduction = $originalDamage - $damage;
+    }
+
+    // Boots resistance bonus
+    $bootsReduction = 0.0;
+    if ($target->boots && $target->boots->hasResistanceBonus()) {
+      $bootsReduction = $damage * $target->boots->getResistanceBonus();
+      $damage -= $bootsReduction;
+    }
+
     $target->health -= $damage;
+    $this->consumeAttackBuffTurn();
 
     return [
       'type' => 'damage',
       'weaponName' => $weaponName,
       'weaponKind' => $weaponKind,
       'damage' => $damage,
+      'armorDurability' => $armorDurability,
+      'armorReduction' => $armorReduction,
+      'bootsReduction' => $bootsReduction,
       'ammoRemaining' => $weapon?->getRemainingAmmo()
     ];
+  }
+
+  public function heal(float $amount): float {
+    $amount = max(0, $amount);
+    $before = $this->health;
+    $this->health += $amount;
+    return $this->health - $before;
+  }
+
+  public function addAttackBonus(float $percent, int $turns): void {
+    if ($percent <= 0 || $turns <= 0) {
+      return;
+    }
+
+    $this->attackBuff['percent'] += $percent;
+    $this->attackBuff['turns'] = max($this->attackBuff['turns'], $turns);
+  }
+
+  public function addDodgeBonus(float $percent, int $turns): void {
+    if ($percent <= 0 || $turns <= 0) {
+      return;
+    }
+
+    $this->dodgeBuff['percent'] += $percent;
+    $this->dodgeBuff['turns'] = max($this->dodgeBuff['turns'], $turns);
+  }
+
+  public function addMovementBonus(float $percent, int $turns): void {
+    if ($percent <= 0 || $turns <= 0) {
+      return;
+    }
+
+    $this->movementBuff['percent'] += $percent;
+    $this->movementBuff['turns'] = max($this->movementBuff['turns'], $turns);
+  }
+
+  public function restoreAmmo(float $ratio = 0.5, int $flat = 0): int {
+    $restored = 0;
+
+    foreach ($this->availableWeapons() as $weapon) {
+      $restored += $weapon->restoreAmmo(
+        flat: $flat > 0 ? $flat : null,
+        ratio: $ratio > 0 ? $ratio : null
+      );
+    }
+
+    return $restored;
+  }
+
+  public function applyPoison(float $damagePerTurn, int $turns): void {
+    if ($damagePerTurn <= 0 || $turns <= 0) {
+      return;
+    }
+
+    $this->poison = [
+      'damage' => $damagePerTurn,
+      'turns' => $turns
+    ];
+  }
+
+  public function cleansePoison(): bool {
+    if ($this->poison === null) {
+      return false;
+    }
+
+    $this->poison = null;
+    return true;
+  }
+
+  private function getAttackMultiplier(): float {
+    if ($this->attackBuff['turns'] > 0) {
+      return 1 + $this->attackBuff['percent'];
+    }
+
+    return 1.0;
+  }
+
+  private function consumeAttackBuffTurn(): void {
+    if ($this->attackBuff['turns'] <= 0) {
+      return;
+    }
+
+    $this->attackBuff['turns']--;
+
+    if ($this->attackBuff['turns'] <= 0) {
+      $this->attackBuff = ['percent' => 0.0, 'turns' => 0];
+    }
+  }
+
+  private function attemptDodge(): bool {
+    $chance = self::BASE_DODGE_CHANCE;
+
+    // Temporary dodge buff
+    if ($this->dodgeBuff['turns'] > 0) {
+      $chance += $this->dodgeBuff['percent'] * 100;
+    }
+
+    // Permanent boots dodge bonus
+    if ($this->boots && $this->boots->hasDodgeBonus()) {
+      $chance += $this->boots->getDodgeBonus() * 100;
+    }
+
+    $chance = max(0, min(95, $chance));
+    $roll = mt_rand(1, 100);
+    $success = $roll <= $chance;
+
+    if ($this->dodgeBuff['turns'] > 0) {
+      $this->dodgeBuff['turns']--;
+
+      if ($this->dodgeBuff['turns'] <= 0) {
+        $this->dodgeBuff = ['percent' => 0.0, 'turns' => 0];
+      }
+    }
+
+    return $success;
+  }
+
+  /**
+   * Adds a consumable to the inventory
+   */
+  public function addToInventory(Consumable $consumable): void {
+    $this->inventory[] = $consumable;
+  }
+
+  /**
+   * Returns the complete inventory
+   * @return Consumable[]
+   */
+  public function getInventory(): array {
+    return $this->inventory;
+  }
+
+  /**
+   * Uses a consumable from the inventory by its index
+   * @return array|null Usage messages, or null if index is invalid
+   */
+  public function useConsumable(int $index): ?array {
+    if (!isset($this->inventory[$index])) {
+      return null;
+    }
+
+    $consumable = $this->inventory[$index];
+    $messages = $consumable->consume($this);
+    
+    // Remove the consumable from inventory after use
+    array_splice($this->inventory, $index, 1);
+    
+    return $messages;
+  }
+
+  /**
+   * Returns the current poison information
+   */
+  public function getPoisonInfo(): ?array {
+    return $this->poison;
+  }
+
+  /**
+   * Checks if the fighter has an active attack buff
+   */
+  public function hasAttackBuff(): bool {
+    return $this->attackBuff['turns'] > 0;
+  }
+
+  /**
+   * Checks if the fighter has an active dodge buff
+   */
+  public function hasDodgeBuff(): bool {
+    return $this->dodgeBuff['turns'] > 0;
+  }
+
+  /**
+   * Returns the total available ammunition count
+   */
+  public function getTotalAmmo(): int {
+    $total = 0;
+    foreach ($this->availableWeapons() as $weapon) {
+      $total += $weapon->getRemainingAmmo();
+    }
+    return $total;
   }
 }
