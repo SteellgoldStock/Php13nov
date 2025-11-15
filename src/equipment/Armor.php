@@ -11,6 +11,14 @@ class Armor {
   // Custom armor type
   public const string TYPE_CUSTOM = 'custom';
 
+  /**
+   * Creates a new armor with predefined or custom stats
+   *
+   * @param string $type The armor type (use TYPE_* constants or custom name)
+   * @param int $durability The armor's durability points
+   * @param float $damageReduction The damage reduction percentage (0.0 to 1.0)
+   * @param bool $isCustom Whether this is a custom armor type
+   */
   public function __construct(
     public string $type = self::TYPE_LIGHT,
     public int    $durability = 40,
@@ -27,6 +35,14 @@ class Armor {
     };
   }
 
+  /**
+   * Creates a custom armor with specific stats
+   *
+   * @param string $name The custom armor name
+   * @param int $durability The armor's durability points
+   * @param float $damageReduction The damage reduction percentage (0.0 to 1.0)
+   * @return self A new custom Armor instance
+   */
   public static function createCustom(
     string $name,
     int    $durability,
@@ -40,27 +56,59 @@ class Armor {
     );
   }
 
+  /**
+   * Sets the armor's stats
+   *
+   * @param int $durability The durability value
+   * @param float $reduction The damage reduction value
+   * @return void
+   */
   private function setStats(int $durability, float $reduction): void {
     $this->durability = $durability;
     $this->damageReduction = $reduction;
   }
 
+  /**
+   * Checks if the armor is broken
+   *
+   * @return bool True if durability is 0 or less, false otherwise
+   */
   public function isBroken(): bool {
     return $this->durability <= 0;
   }
 
+  /**
+   * Returns the current durability
+   *
+   * @return int The durability points remaining
+   */
   public function getDurability(): int {
     return $this->durability;
   }
 
+  /**
+   * Returns the armor type
+   *
+   * @return string The armor type identifier
+   */
   public function getType(): string {
     return $this->type;
   }
 
+  /**
+   * Returns the damage reduction percentage
+   *
+   * @return float The damage reduction (0.0 to 1.0)
+   */
   public function getDamageReduction(): float {
     return $this->damageReduction;
   }
 
+  /**
+   * Returns a human-readable name for the armor type
+   *
+   * @return string The localized armor type name
+   */
   public function getTypeName(): string {
     return match ($this->type) {
       self::TYPE_LIGHT => 'Armure légère',

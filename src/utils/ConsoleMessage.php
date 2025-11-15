@@ -25,6 +25,14 @@ class ConsoleMessage {
   private const STYLE_BOLD = "\033[1m";
   private const STYLE_DIM = "\033[2m";
 
+  /**
+   * Outputs a message to the console with optional emoji and color
+   *
+   * @param string $text The message text
+   * @param string|null $emoji Optional emoji to prefix the message
+   * @param string|null $color Optional color name (see getColorCode for options)
+   * @return void
+   */
   public static function out(string $text, ?string $emoji = null, ?string $color = null): void {
     $colorCode = $color ? self::getColorCode($color) : '';
     $reset = $color ? self::COLOR_RESET : '';
@@ -42,38 +50,97 @@ class ConsoleMessage {
     }
   }
 
+  /**
+   * Outputs a success message in green
+   *
+   * @param string $text The message text
+   * @param string|null $emoji Optional emoji to prefix the message
+   * @return void
+   */
   public static function success(string $text, ?string $emoji = null): void {
     self::out($text, $emoji, 'green');
   }
 
+  /**
+   * Outputs an error message in red
+   *
+   * @param string $text The message text
+   * @param string|null $emoji Optional emoji to prefix the message
+   * @return void
+   */
   public static function error(string $text, ?string $emoji = null): void {
     self::out($text, $emoji, 'red');
   }
 
+  /**
+   * Outputs a warning message in yellow
+   *
+   * @param string $text The message text
+   * @param string|null $emoji Optional emoji to prefix the message
+   * @return void
+   */
   public static function warning(string $text, ?string $emoji = null): void {
     self::out($text, $emoji, 'yellow');
   }
 
+  /**
+   * Outputs an info message in cyan
+   *
+   * @param string $text The message text
+   * @param string|null $emoji Optional emoji to prefix the message
+   * @return void
+   */
   public static function info(string $text, ?string $emoji = null): void {
     self::out($text, $emoji, 'cyan');
   }
 
+  /**
+   * Outputs a damage message in bright red
+   *
+   * @param string $text The message text
+   * @param string|null $emoji Optional emoji to prefix the message
+   * @return void
+   */
   public static function damage(string $text, ?string $emoji = null): void {
     self::out($text, $emoji, 'bright_red');
   }
 
+  /**
+   * Outputs a heal message in bright green
+   *
+   * @param string $text The message text
+   * @param string|null $emoji Optional emoji to prefix the message
+   * @return void
+   */
   public static function heal(string $text, ?string $emoji = null): void {
     self::out($text, $emoji, 'bright_green');
   }
 
+  /**
+   * Outputs a horizontal separator line
+   *
+   * @return void
+   */
   public static function separator(): void {
     echo self::COLOR_GRAY . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" . self::COLOR_RESET . "\n";
   }
 
+  /**
+   * Outputs an empty line
+   *
+   * @return void
+   */
   public static function line(): void {
     echo "\n";
   }
 
+  /**
+   * Outputs a header with title
+   *
+   * @param string $title The header title
+   * @param string|null $emoji Optional emoji to prefix the title
+   * @return void
+   */
   public static function header(string $title, ?string $emoji = null): void {
     self::line();
     self::out($title, $emoji, 'bright_white');
@@ -152,6 +219,12 @@ class ConsoleMessage {
     self::line();
   }
 
+  /**
+   * Converts a color name to ANSI color code
+   *
+   * @param string $color The color name
+   * @return string The ANSI color code, or empty string if color not found
+   */
   private static function getColorCode(string $color): string {
     return match ($color) {
       'red' => self::COLOR_RED,

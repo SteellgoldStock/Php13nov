@@ -5,16 +5,32 @@ namespace App\Consumable;
 use App\Entity\Human;
 
 abstract class Consumable {
+  /**
+   * Creates a new consumable item
+   *
+   * @param string $name The name of the consumable
+   * @param string $description The description of the consumable
+   */
   public function __construct(
     protected string $name,
     protected string $description = ''
   ) {
   }
 
+  /**
+   * Returns the name of the consumable
+   *
+   * @return string The consumable's name
+   */
   public function getName(): string {
     return $this->name;
   }
 
+  /**
+   * Returns the description of the consumable
+   *
+   * @return string The consumable's description
+   */
   public function getDescription(): string {
     return $this->description;
   }

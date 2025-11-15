@@ -1,0 +1,210 @@
+---
+alwaysApply: true
+---
+
+This is a PHP 8.3+ combat simulation game featuring turn-based battles between multiple fighters with various weapons, armor, and consumables. The game uses object-oriented programming with modern PHP features.
+
+## Code Standards
+
+### Language Requirements
+- **PHP Version**: PHP 8.3 or higher
+- **Code Comments**: ALL comments, PHPDocs, and documentation MUST be written in **ENGLISH**
+- **Use modern PHP features**: typed properties, promoted constructor parameters, match expressions, named arguments, union types, etc.
+
+### PHPDoc Standards
+- **Every public and protected method MUST have PHPDoc** with:
+  - Short description of what the method does
+  - `@param` tags for ALL parameters (type, name, and description)
+  - `@return` tag with return type and description
+  - `@throws` tag if method can throw exceptions
+- **Every private method SHOULD have PHPDoc** with at least a description
+- **Class properties** should have type declarations (no need for PHPDoc unless complex)
+- **Use English** for all PHPDoc comments
+
+Example:
+```php
+/**
+ * Attacks a target fighter with the most suitable weapon
+ *
+ * @param Human $target The target to attack
+ * @return array Attack result containing type, damage, weapon info, etc.
+ */
+public function attack(Human $target): array {
+    // Implementation
+}
+```
+
+### Naming Conventions
+- **Classes**: PascalCase (e.g., `Human`, `ConsoleMessage`, `Weapon`)
+- **Methods**: camelCase (e.g., `getName()`, `distanceTo()`, `applyPoison()`)
+- **Properties**: camelCase (e.g., `$maxHealth`, `$weaponName`, `$dodgeBonus`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `EFFECT_HEAL`, `TYPE_PRIMARY`)
+- **Variables**: camelCase (e.g., `$damage`, `$attackResult`, `$aliveFighters`)
+
+### Code Organization
+
+#### Namespace Structure
+```
+App\
+├── Battle\         - Combat system and AI strategy
+├── Consumable\     - Items that can be consumed (Potion, Food)
+├── Entity\         - Fighter entities (Human)
+├── Equipment\      - Combat equipment (Weapon, Armor, Shield, Boots, Quiver)
+└── Utils\          - Utility classes (ConsoleMessage, Seed)
+```
+
+#### Class Structure Order
+1. Constants
+2. Properties (public, protected, private)
+3. Constructor
+4. Static factory methods
+5. Public methods
+6. Protected methods
+7. Private methods
+
+### Type Safety
+- **Always use strict types**: Include `declare(strict_types=1);` when needed
+- **Use type hints** for all parameters and return types
+- **Use nullable types** (`?Type`) when appropriate
+- **Use union types** (`int|float`) for flexibility
+- **Avoid `mixed` type** unless absolutely necessary
+
+### Constructor Patterns
+- Use **promoted constructor parameters** for simple assignments:
+```php
+public function __construct(
+    public string $name,
+    public float $health = 100,
+    public ?Weapon $weapon = null
+) {
+    $this->maxHealth = $health;
+}
+```
+
+### Factory Methods
+- Use **static factory methods** for specialized object creation:
+```php
+public static function healing(string $name, int $min = 20, int $max = 60): self {
+    return new self($name, self::EFFECT_HEAL, ['min' => $min, 'max' => $max]);
+}
+```
+
+### Match Expressions
+- Prefer `match` over `switch` for cleaner code:
+```php
+return match ($this->effect) {
+    self::EFFECT_HEAL => $this->applyHeal($target),
+    self::EFFECT_ATTACK => $this->applyAttackBoost($target),
+    default => []
+};
+```
+
+## Architecture Patterns
+
+### Inheritance
+- `Consumable` (abstract) → `Food`, `Potion`
+- Equipment classes are independent (no inheritance)
+
+### Composition
+- `Human` contains `Weapon`, `Shield`, `Armor`, `Boots`
+- `Weapon` contains optional `Quiver` for ranged weapons
+- `Combat` manages array of `Human` fighters
+
+### Strategy Pattern
+- `ConsumableStrategy` evaluates and decides which consumable to use based on fighter state
+
+## Game Mechanics
+
+### Combat System
+- **Turn-based**: Each fighter acts once per round
+- **Distance-based**: Fighters must move to reach targets
+- **Weapon selection**: Automatically selects best weapon based on range and ammo
+- **Defense layers**: Dodge → Shield Block → Armor Reduction → Boots Resistance
+
+### Equipment System
+- **Weapons**: Melee (no ammo) and Ranged (requires quiver/ammo)
+- **Armor**: Reduces incoming damage by percentage, has durability
+- **Shield**: Can block attacks entirely (chance based on tier), has durability
+- **Boots**: Modify movement speed, dodge chance, and/or damage resistance
+
+### Consumable System
+- **Potions**: Instant or buff effects (heal, attack boost, evasion, endurance, antidote)
+- **Food**: Heal with optional temporary bonuses (attack, movement, dodge)
+- **AI Strategy**: Automatically uses consumables based on priority system
+
+### Status Effects
+- **Poison**: Damage over time for specified number of turns
+- **Attack Buff**: Temporary damage multiplier
+- **Dodge Buff**: Temporary evasion chance increase
+- **Movement Buff**: Temporary speed modifier
+
+## Console Output
+- Use `ConsoleMessage` static methods for all output
+- Support ANSI colors and emojis for better UX
+- Methods: `success()`, `error()`, `warning()`, `info()`, `damage()`, `heal()`
+- Display health bars for visual feedback
+
+## Random Number Generation
+- Use `Seed` class for reproducible randomness
+- Methods: `r()` for integers, `rF()` for formatted values, `rDecimal()` for floats
+- Store seed for debugging and replay
+
+## Best Practices
+
+### Return Arrays
+- Use **associative arrays** with clear keys for complex return values:
+```php
+return [
+    'type' => 'damage',
+    'weaponName' => $weaponName,
+    'damage' => $damage,
+    'ammoRemaining' => $weapon?->getRemainingAmmo()
+];
+```
+
+### Error Handling
+- Throw `InvalidArgumentException` for invalid inputs
+- Validate constructor parameters
+- Check for edge cases (division by zero, null values, etc.)
+
+### Performance
+- Use null coalescing operator: `??`
+- Use nullsafe operator: `?->`
+- Cache calculated values when appropriate
+- Avoid unnecessary object creation
+
+### Code Style
+- Use **4 spaces** for indentation (not tabs)
+- **Opening braces** on same line for methods and control structures
+- **Named arguments** for clarity when calling methods with many parameters
+- **Short array syntax**: `[]` instead of `array()`
+
+## Testing Approach
+- Create multiple fighters with different equipment loadouts
+- Test edge cases: no ammo, broken equipment, out of range attacks
+- Verify consumable AI makes smart decisions
+- Ensure reproducibility with seed system
+
+## Common Pitfalls to Avoid
+- ❌ Don't modify equipment stats after creation (immutable after construction)
+- ❌ Don't forget to consume ammo when using ranged weapons
+- ❌ Don't allow attacks when out of range
+- ❌ Don't forget to decrement buff turn counters
+- ❌ Don't echo directly - use ConsoleMessage methods
+- ❌ Don't use French in comments - ALWAYS use English
+
+## File Creation Rules
+- New equipment classes go in `src/equipment/`
+- New consumable types go in `src/consumable/`
+- New entity types go in `src/entity/`
+- Utility classes go in `src/utils/`
+- Combat-related logic goes in `src/battle/`
+
+## Remember
+- **Comments in English ONLY**
+- **Always add PHPDocs to new methods**
+- **Use type hints everywhere**
+- **Follow the established architecture patterns**
+- **Test with different fighter configurations**
+- **Keep the combat system balanced and fair**
+

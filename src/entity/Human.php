@@ -23,6 +23,18 @@ class Human {
 
   public float $maxHealth;
 
+  /**
+   * Creates a new human fighter
+   *
+   * @param string $name The fighter's name
+   * @param float $health The fighter's starting health points
+   * @param Weapon|null $weapon The primary weapon
+   * @param Weapon|null $secondaryWeapon The secondary weapon
+   * @param Shield|null $shield The shield for blocking
+   * @param Armor|null $armor The armor for damage reduction
+   * @param Boots|null $boots The boots for various bonuses
+   * @param float $position The fighter's starting position on the battlefield
+   */
   public function __construct(
     public string  $name,
     public float   $health = 100,
@@ -36,6 +48,11 @@ class Human {
     $this->maxHealth = $health;
   }
 
+  /**
+   * Processes turn-based effects (like poison) at the beginning of the fighter's turn
+   *
+   * @return array Array of log messages describing turn effects
+   */
   public function beginTurn(): array {
     $messages = [];
 
@@ -55,26 +72,59 @@ class Human {
     return $messages;
   }
 
+  /**
+   * Returns the fighter's name
+   *
+   * @return string The fighter's name
+   */
   public function getName(): string {
     return $this->name;
   }
 
+  /**
+   * Returns the fighter's current health
+   *
+   * @return float The current health points
+   */
   public function getHealth(): float {
     return $this->health;
   }
 
+  /**
+   * Checks if the fighter is still alive
+   *
+   * @return bool True if health is greater than 0, false otherwise
+   */
   public function isAlive(): bool {
     return $this->health > 0;
   }
 
+  /**
+   * Returns the fighter's current position on the battlefield
+   *
+   * @return float The position coordinate
+   */
   public function getPosition(): float {
     return $this->position;
   }
 
+  /**
+   * Sets the fighter's position on the battlefield
+   *
+   * @param float $position The new position coordinate
+   * @return void
+   */
   public function setPosition(float $position): void {
     $this->position = $position;
   }
 
+  /**
+   * Moves the fighter towards a target, considering movement bonuses
+   *
+   * @param Human $target The target to move towards
+   * @param float $step The base movement step distance
+   * @return void
+   */
   public function moveTowards(Human $target, float $step = self::DEFAULT_STEP): void {
     $distance = $this->distanceTo($target);
 
@@ -104,10 +154,21 @@ class Human {
     $this->position += $direction * $movement;
   }
 
+  /**
+   * Calculates the distance to another fighter
+   *
+   * @param Human $target The target fighter
+   * @return float The absolute distance between fighters
+   */
   public function distanceTo(Human $target): float {
     return abs($this->position - $target->position);
   }
 
+  /**
+   * Returns all available weapons for the fighter
+   *
+   * @return Weapon[] Array of available weapons
+   */
   private function availableWeapons(): array {
     $weapons = [];
 
@@ -117,6 +178,13 @@ class Human {
     return $weapons;
   }
 
+  /**
+   * Selects the best weapon for attacking a target based on range and ammo
+   *
+   * @param Human $target The target to attack
+   * @param bool $requireAmmo Whether to require ammunition for ranged weapons
+   * @return Weapon|null The selected weapon, or null if no suitable weapon found
+   */
   private function selectWeaponForTarget(Human $target, bool $requireAmmo = true): ?Weapon {
     $distance = $this->distanceTo($target);
 
@@ -131,14 +199,32 @@ class Human {
     return null;
   }
 
+  /**
+   * Checks if a weapon has ammunition available
+   *
+   * @param Weapon $weapon The weapon to check
+   * @return bool True if weapon has ammo or doesn't need it, false otherwise
+   */
   private function weaponHasAmmo(Weapon $weapon): bool {
     return $weapon->hasAmmo();
   }
 
+  /**
+   * Consumes one unit of ammunition from a weapon
+   *
+   * @param Weapon $weapon The weapon to consume ammo from
+   * @return bool True if ammo was consumed successfully, false otherwise
+   */
   private function consumeAmmo(Weapon $weapon): bool {
     return $weapon->consumeAmmo();
   }
 
+  /**
+   * Determines the kind of weapon being used (primary, secondary, unarmed)
+   *
+   * @param Weapon|null $weapon The weapon to check
+   * @return string The weapon kind: 'primary', 'secondary', 'unarmed', or 'unknown'
+   */
   private function determineWeaponKind(?Weapon $weapon): string {
     if ($weapon === null) {
       return 'unarmed';
@@ -155,6 +241,12 @@ class Human {
     return 'unknown';
   }
 
+  /**
+   * Attacks a target fighter with the most suitable weapon
+   *
+   * @param Human $target The target to attack
+   * @return array Attack result containing type, damage, weapon info, etc.
+   */
   public function attack(Human $target): array {
     $distance = $this->distanceTo($target);
     $weapon = $this->selectWeaponForTarget($target, requireAmmo: true);
@@ -288,6 +380,12 @@ class Human {
     ];
   }
 
+  /**
+   * Heals the fighter by the specified amount
+   *
+   * @param float $amount The amount of health to restore
+   * @return float The actual amount of health restored
+   */
   public function heal(float $amount): float {
     $amount = max(0, $amount);
     $before = $this->health;
@@ -295,6 +393,13 @@ class Human {
     return $this->health - $before;
   }
 
+  /**
+   * Adds a temporary attack bonus to the fighter
+   *
+   * @param float $percent The damage increase percentage (0.0 to 1.0)
+   * @param int $turns The number of turns the bonus lasts
+   * @return void
+   */
   public function addAttackBonus(float $percent, int $turns): void {
     if ($percent <= 0 || $turns <= 0) {
       return;
@@ -304,6 +409,13 @@ class Human {
     $this->attackBuff['turns'] = max($this->attackBuff['turns'], $turns);
   }
 
+  /**
+   * Adds a temporary dodge bonus to the fighter
+   *
+   * @param float $percent The dodge chance increase percentage (0.0 to 1.0)
+   * @param int $turns The number of turns the bonus lasts
+   * @return void
+   */
   public function addDodgeBonus(float $percent, int $turns): void {
     if ($percent <= 0 || $turns <= 0) {
       return;
@@ -313,6 +425,13 @@ class Human {
     $this->dodgeBuff['turns'] = max($this->dodgeBuff['turns'], $turns);
   }
 
+  /**
+   * Adds a temporary movement bonus to the fighter
+   *
+   * @param float $percent The movement speed increase percentage (0.0 to 1.0)
+   * @param int $turns The number of turns the bonus lasts
+   * @return void
+   */
   public function addMovementBonus(float $percent, int $turns): void {
     if ($percent <= 0 || $turns <= 0) {
       return;
@@ -322,6 +441,13 @@ class Human {
     $this->movementBuff['turns'] = max($this->movementBuff['turns'], $turns);
   }
 
+  /**
+   * Restores ammunition for all weapons
+   *
+   * @param float $ratio The ratio of max ammo to restore (0.0 to 1.0)
+   * @param int $flat The flat amount of ammo to add
+   * @return int The total amount of ammunition restored
+   */
   public function restoreAmmo(float $ratio = 0.5, int $flat = 0): int {
     $restored = 0;
 
@@ -335,6 +461,13 @@ class Human {
     return $restored;
   }
 
+  /**
+   * Applies poison damage over time to the fighter
+   *
+   * @param float $damagePerTurn The damage dealt each turn
+   * @param int $turns The number of turns the poison lasts
+   * @return void
+   */
   public function applyPoison(float $damagePerTurn, int $turns): void {
     if ($damagePerTurn <= 0 || $turns <= 0) {
       return;
@@ -346,6 +479,11 @@ class Human {
     ];
   }
 
+  /**
+   * Removes all poison effects from the fighter
+   *
+   * @return bool True if poison was removed, false if fighter wasn't poisoned
+   */
   public function cleansePoison(): bool {
     if ($this->poison === null) {
       return false;
@@ -355,6 +493,11 @@ class Human {
     return true;
   }
 
+  /**
+   * Calculates the current attack multiplier including buffs
+   *
+   * @return float The attack multiplier (1.0 = normal, > 1.0 = boosted)
+   */
   private function getAttackMultiplier(): float {
     if ($this->attackBuff['turns'] > 0) {
       return 1 + $this->attackBuff['percent'];
@@ -363,6 +506,11 @@ class Human {
     return 1.0;
   }
 
+  /**
+   * Decreases the remaining turns for the attack buff
+   *
+   * @return void
+   */
   private function consumeAttackBuffTurn(): void {
     if ($this->attackBuff['turns'] <= 0) {
       return;
@@ -375,6 +523,11 @@ class Human {
     }
   }
 
+  /**
+   * Attempts to dodge an incoming attack
+   *
+   * @return bool True if the attack was dodged, false otherwise
+   */
   private function attemptDodge(): bool {
     $chance = self::BASE_DODGE_CHANCE;
 

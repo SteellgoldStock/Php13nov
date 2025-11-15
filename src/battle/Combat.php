@@ -11,6 +11,12 @@ class Combat {
   /** @var Human[] */
   private array $fighters;
 
+  /**
+   * Creates a new combat instance with the given fighters
+   *
+   * @param Human|array $fighters Either a single Human or an array of Human objects
+   * @throws InvalidArgumentException If less than 2 fighters are provided
+   */
   public function __construct(Human|array $fighters) {
     if ($fighters instanceof Human) {
       $args = func_get_args();
@@ -30,10 +36,20 @@ class Combat {
     }
   }
 
+  /**
+   * Returns an array of all fighters that are still alive
+   *
+   * @return Human[] Array of alive fighters
+   */
   public function getAliveFighters(): array {
     return array_filter($this->fighters, fn($f) => $f->isAlive());
   }
 
+  /**
+   * Starts the combat and runs until only one fighter remains or all are eliminated
+   *
+   * @return void
+   */
   public function start(): void {
     ConsoleMessage::line();
 
@@ -76,6 +92,12 @@ class Combat {
     }
   }
 
+  /**
+   * Finds the closest alive target for the given attacker
+   *
+   * @param Human $attacker The fighter looking for a target
+   * @return Human|null The closest target, or null if no valid targets exist
+   */
   private function findClosestTarget(Human $attacker): ?Human {
     $aliveFighters = $this->getAliveFighters();
     $closestTarget = null;
@@ -94,6 +116,13 @@ class Combat {
     return $closestTarget;
   }
 
+  /**
+   * Executes a single round of combat between an attacker and a defender
+   *
+   * @param Human $attacker The attacking fighter
+   * @param Human $defender The defending fighter
+   * @return void
+   */
   private function executeRound(Human $attacker, Human $defender): void {
     // AI decides FIRST - can anticipate poison damage and other turn effects
     $consumableResult = ConsumableStrategy::evaluateAndUseConsumable($attacker, $defender);
@@ -222,6 +251,12 @@ class Combat {
 
   }
 
+  /**
+   * Creates a descriptive string for remaining ammunition
+   *
+   * @param int|null $ammo The amount of ammunition remaining, or null if not applicable
+   * @return string|null A formatted string describing the ammo, or null if no ammo info
+   */
   private function describeAmmo(?int $ammo): ?string {
     if ($ammo === null) {
       return null;
