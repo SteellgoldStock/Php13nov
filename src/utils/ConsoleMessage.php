@@ -4,26 +4,26 @@ namespace App\Utils;
 
 class ConsoleMessage {
   // ANSI color codes
-  private const COLOR_RESET = "\033[0m";
-  private const COLOR_RED = "\033[31m";
-  private const COLOR_GREEN = "\033[32m";
-  private const COLOR_YELLOW = "\033[33m";
-  private const COLOR_BLUE = "\033[34m";
-  private const COLOR_MAGENTA = "\033[35m";
-  private const COLOR_CYAN = "\033[36m";
-  private const COLOR_WHITE = "\033[37m";
-  private const COLOR_BRIGHT_RED = "\033[91m";
-  private const COLOR_BRIGHT_GREEN = "\033[92m";
-  private const COLOR_BRIGHT_YELLOW = "\033[93m";
-  private const COLOR_BRIGHT_BLUE = "\033[94m";
-  private const COLOR_BRIGHT_MAGENTA = "\033[95m";
-  private const COLOR_BRIGHT_CYAN = "\033[96m";
-  private const COLOR_BRIGHT_WHITE = "\033[97m";
-  private const COLOR_GRAY = "\033[90m";
+  private const string COLOR_RESET = "\033[0m";
+  private const string COLOR_RED = "\033[31m";
+  private const string COLOR_GREEN = "\033[32m";
+  private const string COLOR_YELLOW = "\033[33m";
+  private const string COLOR_BLUE = "\033[34m";
+  private const string COLOR_MAGENTA = "\033[35m";
+  private const string COLOR_CYAN = "\033[36m";
+  private const string COLOR_WHITE = "\033[37m";
+  private const string COLOR_BRIGHT_RED = "\033[91m";
+  private const string COLOR_BRIGHT_GREEN = "\033[92m";
+  private const string COLOR_BRIGHT_YELLOW = "\033[93m";
+  private const string COLOR_BRIGHT_BLUE = "\033[94m";
+  private const string COLOR_BRIGHT_MAGENTA = "\033[95m";
+  private const string COLOR_BRIGHT_CYAN = "\033[96m";
+  private const string COLOR_BRIGHT_WHITE = "\033[97m";
+  private const string COLOR_GRAY = "\033[90m";
 
   // Text styles
-  private const STYLE_BOLD = "\033[1m";
-  private const STYLE_DIM = "\033[2m";
+  private const string STYLE_BOLD = "\033[1m";
+  private const string STYLE_DIM = "\033[2m";
 
   /**
    * Outputs a message to the console with optional emoji and color
@@ -40,7 +40,7 @@ class ConsoleMessage {
     if ($emoji !== null) {
       echo "{$colorCode}{$emoji} {$text}{$reset}\n";
     } else {
-      $startsWithEmoji = preg_match('/^[\x{1F300}-\x{1F9FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}☠️💧🛡️]/u', $text);
+      $startsWithEmoji = preg_match('/^[\x{1F300}-\x{1F9FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}☠️💧🛡]/u', $text);
 
       if ($startsWithEmoji) {
         echo "{$colorCode}{$text}{$reset}\n";
