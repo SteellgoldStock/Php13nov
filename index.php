@@ -107,12 +107,12 @@ $iron_armor = new Armor(type: Armor::TYPE_IRON);
 $scale_armor = new Armor(type: Armor::TYPE_SCALE);
 
 // Custom armors
-$dragon_armor = Armor::createCustom('dragonscale', durability: $seed->rF(180, 220), damageReduction: $seed->r(50, 60) / 100);
-$mithril_armor = Armor::createCustom('mithril', durability: $seed->rF(130, 170), damageReduction: $seed->r(40, 50) / 100);
-$leather_armor = Armor::createCustom('leather', durability: $seed->rF(40, 60), damageReduction: $seed->r(10, 20) / 100);
-$knight_armor = Armor::createCustom('knight', durability: $seed->rF(160, 200), damageReduction: $seed->r(45, 55) / 100);
-$shadow_armor = Armor::createCustom('shadow', durability: $seed->rF(50, 70), damageReduction: $seed->r(15, 25) / 100);
-$elven_armor = Armor::createCustom('elven', durability: $seed->rF(80, 100), damageReduction: $seed->r(25, 35) / 100);
+$dragon_armor = Armor::new('dragonscale', durability: $seed->rF(180, 220), damageReduction: $seed->r(50, 60) / 100);
+$mithril_armor = Armor::new('mithril', durability: $seed->rF(130, 170), damageReduction: $seed->r(40, 50) / 100);
+$leather_armor = Armor::new('leather', durability: $seed->rF(40, 60), damageReduction: $seed->r(10, 20) / 100);
+$knight_armor = Armor::new('knight', durability: $seed->rF(160, 200), damageReduction: $seed->r(45, 55) / 100);
+$shadow_armor = Armor::new('shadow', durability: $seed->rF(50, 70), damageReduction: $seed->r(15, 25) / 100);
+$elven_armor = Armor::new('elven', durability: $seed->rF(80, 100), damageReduction: $seed->r(25, 35) / 100);
 
 // Predefined boots
 $running_boots = new Boots(type: Boots::TYPE_RUNNING);
@@ -120,11 +120,11 @@ $heavy_boots = new Boots(type: Boots::TYPE_HEAVY);
 $silent_boots = new Boots(type: Boots::TYPE_SILENT);
 
 // Custom boots
-$wind_boots = Boots::createCustom('wind', movementBonus: $seed->r(70, 90) / 100, dodgeBonus: $seed->r(8, 12) / 100);
-$tank_boots = Boots::createCustom('tank', movementBonus: -$seed->r(20, 30) / 100, resistanceBonus: $seed->r(15, 21) / 100);
-$assassin_boots = Boots::createCustom('assassin', movementBonus: $seed->r(25, 35) / 100, dodgeBonus: $seed->r(20, 30) / 100);
-$balanced_boots = Boots::createCustom('balanced', movementBonus: $seed->r(10, 20) / 100, resistanceBonus: $seed->r(5, 11) / 100, dodgeBonus: $seed->r(8, 12) / 100);
-$elven_boots = Boots::createCustom('elven', movementBonus: $seed->r(35, 45) / 100, resistanceBonus: $seed->r(3, 7) / 100, dodgeBonus: $seed->r(12, 18) / 100);
+$wind_boots = Boots::new('wind', movementBonus: $seed->r(70, 90) / 100, dodgeBonus: $seed->r(8, 12) / 100);
+$tank_boots = Boots::new('tank', movementBonus: -$seed->r(20, 30) / 100, resistanceBonus: $seed->r(15, 21) / 100);
+$assassin_boots = Boots::new('assassin', movementBonus: $seed->r(25, 35) / 100, dodgeBonus: $seed->r(20, 30) / 100);
+$balanced_boots = Boots::new('balanced', movementBonus: $seed->r(10, 20) / 100, resistanceBonus: $seed->r(5, 11) / 100, dodgeBonus: $seed->r(8, 12) / 100);
+$elven_boots = Boots::new('elven', movementBonus: $seed->r(35, 45) / 100, resistanceBonus: $seed->r(3, 7) / 100, dodgeBonus: $seed->r(12, 18) / 100);
 
 $arthur = new Human(
   name: 'Arthur',

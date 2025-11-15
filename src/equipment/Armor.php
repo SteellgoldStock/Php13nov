@@ -43,7 +43,7 @@ class Armor {
    * @param float $damageReduction The damage reduction percentage (0.0 to 1.0)
    * @return self A new custom Armor instance
    */
-  public static function createCustom(
+  public static function new(
     string $name,
     int    $durability,
     float  $damageReduction

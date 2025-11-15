@@ -35,6 +35,7 @@ class Human {
    * @param Shield|null $shield The shield for blocking
    * @param Armor|null $armor The armor for damage reduction
    * @param Boots|null $boots The boots for various bonuses
+   * @param array $inventory Array of Consumable items to start with
    * @param float $position The fighter's starting position on the battlefield
    */
   public function __construct(
@@ -45,9 +46,11 @@ class Human {
     public ?Shield $shield = null,
     public ?Armor  $armor = null,
     public ?Boots  $boots = null,
+    array          $inventory = [],
     public float   $position = 0,
   ) {
     $this->maxHealth = $health;
+    $this->inventory = $inventory;
   }
 
   /**

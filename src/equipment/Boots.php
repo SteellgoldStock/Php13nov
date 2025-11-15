@@ -59,7 +59,7 @@ class Boots {
    * @param float $dodgeBonus The dodge chance bonus
    * @return self A new custom Boots instance
    */
-  public static function createCustom(
+  public static function new(
     string $name,
     float $movementBonus = 0.0,
     float $resistanceBonus = 0.0,
