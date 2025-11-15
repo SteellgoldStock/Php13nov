@@ -3,34 +3,80 @@
 namespace App\Battle;
 
 use App\Entity\Human;
+use App\Environment\Environment;
 use App\Utils\ConsoleMessage;
+use App\Utils\Seed;
 use InvalidArgumentException;
 
 class Combat {
   private int $round = 1;
   /** @var Human[] */
   private array $fighters;
+  /** @var array Mapping of fighter object_id => team_id to manage teams (unlimited teams supported) */
+  private array $teams = [];
+  /** @var array Mapping of team_id => team_name (optional) */
+  private array $teamNames = [];
+  private Environment $environment;
+  private Seed $seed;
 
   /**
    * Creates a new combat instance with the given fighters
    *
-   * @param Human|array $fighters Either a single Human or an array of Human objects
+   * @param Seed $seed The random number generator
+   * @param Team|Human|array $fighters The fighters (Team objects, solo Human, or mixed array)
+   * @param Environment|null $environment The combat terrain (default: neutral Environment)
    * @throws InvalidArgumentException If less than 2 fighters are provided
    */
-  public function __construct(Human|array $fighters) {
+  public function __construct(Seed $seed, Team|Human|array $fighters, ?Environment $environment = null) {
+    $this->seed = $seed;
+    $this->environment = $environment ?? new Environment($seed);
     if ($fighters instanceof Human) {
-      $args = func_get_args();
-      if (isset($args[1]) && $args[1] instanceof Human) {
-        $this->fighters = [$fighters, $args[1]];
-      } else {
-        throw new InvalidArgumentException("Il faut au moins 2 combattants");
+      // Single Human (need at least 2 fighters)
+      throw new InvalidArgumentException("Il faut au moins 2 combattants");
+    } elseif ($fighters instanceof Team) {
+      // Single Team (need at least 2 fighters or teams)
+      throw new InvalidArgumentException("Il faut au moins 2 combattants ou équipes");
+    } elseif (is_array($fighters)) {
+      $this->fighters = [];
+      $teamId = 0;
+      
+      // Parse structure and manage teams (supports unlimited teams of any size)
+      foreach ($fighters as $item) {
+        if ($item instanceof Team) {
+          // This is a Team object
+          foreach ($item->getFighters() as $fighter) {
+            $this->fighters[] = $fighter;
+            $this->teams[spl_object_id($fighter)] = $teamId;
+          }
+          
+          // Store team name if it has one
+          if ($item->hasName()) {
+            $this->teamNames[$teamId] = $item->getName();
+          }
+          
+          $teamId++;
+        } elseif (is_array($item)) {
+          // Legacy support
+          foreach ($item as $fighter) {
+            if ($fighter instanceof Human) {
+              $this->fighters[] = $fighter;
+              $this->teams[spl_object_id($fighter)] = $teamId;
+            }
+          }
+          $teamId++;
+        } elseif ($item instanceof Human) {
+          // This is a solo fighter
+          $this->fighters[] = $item;
+          $this->teams[spl_object_id($item)] = $teamId;
+          $teamId++;
+        }
       }
-    } elseif ($fighters) {
-      if (count($fighters) < 2) {
+      
+      if (count($this->fighters) < 2) {
         throw new InvalidArgumentException("Il faut au moins 2 combattants");
       }
 
-      $this->fighters = array_values($fighters);
+      $this->fighters = array_values($this->fighters);
     } else {
       throw new InvalidArgumentException("Format invalide");
     }
@@ -46,17 +92,55 @@ class Combat {
   }
 
   /**
-   * Starts the combat and runs until only one fighter remains or all are eliminated
+   * Returns the number of alive teams
+   *
+   * @return int The number of teams with at least one alive fighter
+   */
+  private function getAliveTeams(): int {
+    $aliveTeams = [];
+    foreach ($this->getAliveFighters() as $fighter) {
+      $teamId = $this->teams[spl_object_id($fighter)] ?? null;
+      if ($teamId !== null) {
+        $aliveTeams[$teamId] = true;
+      }
+    }
+    return count($aliveTeams);
+  }
+
+  /**
+   * Checks if two fighters are on the same team
+   *
+   * @param Human $fighter1 The first fighter
+   * @param Human $fighter2 The second fighter
+   * @return bool True if both fighters are on the same team, false otherwise
+   */
+  private function areAllies(Human $fighter1, Human $fighter2): bool {
+    $fighterTeamId = $this->teams[spl_object_id($fighter1)] ?? null;
+    $otherFighterTeamId = $this->teams[spl_object_id($fighter2)] ?? null;
+
+    return $fighterTeamId !== null && $otherFighterTeamId !== null && $fighterTeamId === $otherFighterTeamId;
+  }
+
+  /**
+   * Starts the combat and runs until only one team remains or all are eliminated
    *
    * @return void
    */
   public function start(): void {
     ConsoleMessage::line();
+    
+    // Display environment info
+    echo $this->environment->getDescription() . "\n";
+    ConsoleMessage::line();
+
+    // Display team composition (supports unlimited teams)
+    $this->displayTeams();
+    ConsoleMessage::line();
 
     // Display initial health bars
     ConsoleMessage::displayHealthBars($this->fighters);
 
-    while (count($this->getAliveFighters()) > 1) {
+    while ($this->getAliveTeams() > 1) {
       ConsoleMessage::info("Tour {$this->round}", "⚔️");
       ConsoleMessage::separator();
 
@@ -70,12 +154,12 @@ class Combat {
 
         $this->executeRound($attacker, $target);
 
-        if (count($this->getAliveFighters()) <= 1) break;
+        if ($this->getAliveTeams() <= 1) break;
       }
 
       // Display health bars at the end of each round
       $aliveFighters = $this->getAliveFighters();
-      if (count($aliveFighters) > 1) {
+      if ($this->getAliveTeams() > 1) {
         ConsoleMessage::displayHealthBars($aliveFighters);
       }
 
@@ -84,11 +168,57 @@ class Combat {
     }
 
     $survivors = $this->getAliveFighters();
-    if (count($survivors) === 1) {
-      $winner = array_values($survivors)[0];
-      ConsoleMessage::success("{$winner->getName()} remporte le combat !", "🏆");
+    $aliveTeams = $this->getAliveTeams();
+    
+    if ($aliveTeams === 1) {
+      // One team won
+      if (count($survivors) === 1) {
+        $winner = array_values($survivors)[0];
+        ConsoleMessage::success("{$winner->getName()} remporte le combat !", "🏆");
+      } else {
+        // Multiple survivors from the same team
+        $teamId = $this->teams[spl_object_id($survivors[0])] ?? null;
+        $teamMembers = array_map(fn($f) => $f->getName(), $survivors);
+        
+        // Display team name if it has one
+        $teamLabel = isset($this->teamNames[$teamId]) 
+          ? $this->teamNames[$teamId] 
+          : "L'équipe " . ($teamId + 1);
+        
+        ConsoleMessage::success("{$teamLabel} remporte le combat ! Survivants: " . implode(", ", $teamMembers), "🏆");
+      }
     } elseif (count($survivors) === 0) {
       ConsoleMessage::error("Tous les combattants sont tombés ! Match nul.", "⚰️");
+    }
+  }
+
+  /**
+   * Displays team composition (supports unlimited teams of any size)
+   *
+   * @return void
+   */
+  private function displayTeams(): void {
+    // Group fighters by team
+    $teamGroups = [];
+    foreach ($this->fighters as $fighter) {
+      $teamId = $this->teams[spl_object_id($fighter)] ?? 0;
+      $teamGroups[$teamId][] = $fighter;
+    }
+
+    echo "👥 Composition des équipes:\n";
+    foreach ($teamGroups as $teamId => $members) {
+      if (count($members) === 1) {
+        echo "   └ Solo: {$members[0]->getName()}\n";
+      } else {
+        $names = array_map(fn($f) => $f->getName(), $members);
+
+        // Display team name if it has one
+        if (isset($this->teamNames[$teamId])) {
+          echo "   └ {$this->teamNames[$teamId]}: " . implode(", ", $names) . "\n";
+        } else {
+          echo "   └ Équipe " . ($teamId + 1) . ": " . implode(", ", $names) . "\n";
+        }
+      }
     }
   }
 
@@ -105,6 +235,9 @@ class Combat {
 
     foreach ($aliveFighters as $potential) {
       if ($potential === $attacker) continue;
+      
+      // Don't target allies (supports unlimited teams)
+      if ($this->areAllies($attacker, $potential)) continue;
 
       $distance = $attacker->distanceTo($potential);
       if ($distance < $minDistance) {
@@ -222,10 +355,16 @@ class Combat {
       ConsoleMessage::info("{$defender->getName()} esquive l'attaque de {$attacker->getName()}.", "💨");
       ConsoleMessage::out("Aucun dégât reçu.", null, 'gray');
     } elseif ($type === 'damage') {
+      $isCritical = $attackResult['isCritical'] ?? false;
       $weaponLabel = $weaponName && $weaponName !== 'poings'
         ? "son {$weaponName}"
         : 'ses poings';
-      ConsoleMessage::damage("{$attacker->getName()} attaque avec {$weaponLabel} et inflige " . round($damage, 1) . " dégâts.", "⚔️");
+      
+      if ($isCritical) {
+        ConsoleMessage::damage("{$attacker->getName()} attaque avec {$weaponLabel} et inflige " . round($damage, 1) . " dégâts. 💥 COUP CRITIQUE !", "⚔️");
+      } else {
+        ConsoleMessage::damage("{$attacker->getName()} attaque avec {$weaponLabel} et inflige " . round($damage, 1) . " dégâts.", "⚔️");
+      }
       ConsoleMessage::out("{$defender->getName()} : " . max(0, round($defender->health, 1)) . " PV restants", null, 'yellow');
     } else {
       ConsoleMessage::warning("Résultat d'attaque inattendu ({$type}).", "❓");

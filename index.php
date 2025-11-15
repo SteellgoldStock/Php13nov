@@ -3,9 +3,11 @@
 require __DIR__ . '/autoload.php';
 
 use App\Battle\Combat;
+use App\Battle\Team;
 use App\Consumable\Food;
 use App\Consumable\Potion;
 use App\Entity\Human;
+use App\Environment\Terrains\ForestTerrain;
 use App\Equipment\Armor;
 use App\Equipment\Boots;
 use App\Equipment\Quiver;
@@ -334,7 +336,23 @@ function printGameState(array $weapons, array $shields, array $armors, array $bo
   }
   
   echo "\n❤️  Combattants\n";
-  foreach ($humans as $human) {
+  // Flatten the fighters array (support nested arrays and Team objects)
+  $allFighters = [];
+  foreach ($humans as $item) {
+    if ($item instanceof Team) {
+      foreach ($item->getFighters() as $fighter) {
+        $allFighters[] = $fighter;
+      }
+    } elseif (is_array($item)) {
+      foreach ($item as $fighter) {
+        $allFighters[] = $fighter;
+      }
+    } else {
+      $allFighters[] = $item;
+    }
+  }
+  
+  foreach ($allFighters as $human) {
     echo "    └ {$human->getName()}: [{$human->getHealth()} PV]\n";
     if ($human->armor) {
       echo "        • Armure: {$human->armor->getTypeName()}\n";
@@ -370,12 +388,18 @@ $all_boots = [
   $balanced_boots, $elven_boots
 ];
 
+$teamFrance = Team::named("Équipe France", $arthur, $legolas, $thor, $robin, $conan);
+$teamNordic = Team::named("Équipe Nordique", $zeus, $valkyrie);
+$teamChaos = new Team($barbarian, $ninja);
+
 $all_fighters = [
-  $arthur, $legolas, $thor, $robin, $conan,
-  $samurai, $zeus, $valkyrie, $barbarian, $ninja
+  $teamFrance,
+  $teamNordic,
+  $teamChaos,
+  $samurai
 ];
 
 printGameState($all_weapons, $all_shields, $all_armors, $all_boots, $all_fighters, $seed);
 
-$combat = new Combat($all_fighters);
+$combat = new Combat($seed, $all_fighters, new ForestTerrain($seed));
 $combat->start();

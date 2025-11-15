@@ -12,6 +12,8 @@ class Human {
   private const float BASE_RANGE = 1.0;
   private const float DEFAULT_STEP = 1.0;
   private const float BASE_DODGE_CHANCE = 5.0;
+  private const float BASE_CRIT_CHANCE = 10.0;  // Base critical hit chance (%)
+  private const float CRIT_DAMAGE_MULTIPLIER = 2.0;  // Critical hits deal 2x damage
 
   private array $attackBuff = ['percent' => 0.0, 'turns' => 0];
   private array $dodgeBuff = ['percent' => 0.0, 'turns' => 0];
@@ -300,6 +302,12 @@ class Human {
     $weaponKind = $this->determineWeaponKind($weapon);
     $damage = $weapon ? $weapon->getDamage() : mt_rand(1, 5);
     $damage *= $this->getAttackMultiplier();
+    
+    // Check for critical hit
+    $isCritical = $this->rollCriticalHit();
+    if ($isCritical) {
+      $damage *= self::CRIT_DAMAGE_MULTIPLIER;
+    }
 
     if ($weapon && !$this->consumeAmmo($weapon)) {
       return [
@@ -332,6 +340,7 @@ class Human {
         'weaponName' => $weaponName,
         'weaponKind' => $weaponKind,
         'damage' => 0.0,
+        'isCritical' => false,
         'shieldDurability' => $shieldDurability,
         'ammoRemaining' => $weapon?->getRemainingAmmo()
       ];
@@ -344,6 +353,7 @@ class Human {
         'weaponName' => $weaponName,
         'weaponKind' => $weaponKind,
         'damage' => 0.0,
+        'isCritical' => false,
         'ammoRemaining' => $weapon?->getRemainingAmmo()
       ];
     }
@@ -373,11 +383,23 @@ class Human {
       'weaponName' => $weaponName,
       'weaponKind' => $weaponKind,
       'damage' => $damage,
+      'isCritical' => $isCritical,
       'armorDurability' => $armorDurability,
       'armorReduction' => $armorReduction,
       'bootsReduction' => $bootsReduction,
       'ammoRemaining' => $weapon?->getRemainingAmmo()
     ];
+  }
+
+  /**
+   * Rolls for a critical hit
+   *
+   * @return bool True if the attack is a critical hit, false otherwise
+   */
+  private function rollCriticalHit(): bool {
+    $chance = self::BASE_CRIT_CHANCE;
+    $roll = mt_rand(1, 100);
+    return $roll <= $chance;
   }
 
   /**
