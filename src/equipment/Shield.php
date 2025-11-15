@@ -27,7 +27,7 @@ class Shield {
       return false;
     }
 
-    $this->durability -= $damage;
+    $this->durability = (int)round($this->durability - $damage);
 
     if ($this->durability <= 0) {
       $this->durability = 0;

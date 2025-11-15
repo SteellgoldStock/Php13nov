@@ -21,6 +21,8 @@ class Human {
   /** @var Consumable[] */
   private array $inventory = [];
 
+  public float $maxHealth;
+
   public function __construct(
     public string  $name,
     public float   $health = 100,
@@ -31,6 +33,7 @@ class Human {
     public ?Boots  $boots = null,
     public float   $position = 0,
   ) {
+    $this->maxHealth = $health;
   }
 
   public function beginTurn(): array {
